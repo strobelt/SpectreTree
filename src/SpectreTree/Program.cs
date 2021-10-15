@@ -10,47 +10,42 @@ namespace SpectreTree
     {
         static void Main(string[] args)
         {
-            System.Console.OutputEncoding = System.Text.Encoding.UTF8;
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(o =>
                 {
                     var path = o.Path;
-                    PrintFileSystemEntries(path);
+                    var tree = PrintFileSystemEntries(path);
+                    AnsiConsole.Write(tree);
                 })
             ;
             Console.ReadKey();
         }
 
-        static void PrintFileSystemEntries(string path, int depth = 0)
+        static Tree PrintFileSystemEntries(string path)
         {
+            var tree = new Tree("");
             foreach (var directory in Directory.EnumerateDirectories(path).Select(d => new DirectoryInfo(d)))
             {
-                if (depth > 0) PrintDepthSpacing(depth);
-
-                PrintDirectory(directory.Name);
-                PrintFileSystemEntries(directory.FullName, depth + 1);
+                tree.AddNode(GetDirectoryMarkup(directory.Name));
+                tree.AddNode(PrintFileSystemEntries(directory.FullName));
             }
 
             foreach (var file in Directory.EnumerateFiles(path).Select(f => new FileInfo(f)))
             {
-                PrintFile(file.Name, depth);
+                tree.AddNode(GetFileMarkup(file.Name));
             }
+
+            return tree;
         }
 
-        private static void PrintDepthSpacing(int depth)
+        static string GetFileMarkup(string file)
         {
-            AnsiConsole.Write($"{new string(' ', (depth - 1) * 4)}└───");
+            return $"[red]{file}[/]";
         }
 
-        static void PrintFile(string file, int depth = 0)
+        static string GetDirectoryMarkup(string directory)
         {
-            if (depth > 0) PrintDepthSpacing(depth);
-            AnsiConsole.MarkupLine($"[red]{file}[/]");
-        }
-
-        static void PrintDirectory(string directory)
-        {
-            AnsiConsole.MarkupLine($"[green]{directory}[/]");
+            return $"[green]{directory}[/]";
         }
     }
 }
